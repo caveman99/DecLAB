@@ -1,8 +1,8 @@
 // made by CasualArclamp
-//! Digital voice's data tabs, over the right-hand box: Heard (talkgroups
-//! and radios), Hex (every data message, hex with ASCII beside it), LRRP
-//! (location messages as a table) and IP (the datagrams, PCAP recording,
-//! one picked apart).
+//! Digital voice's and the data decoders' tabs, over the right-hand box:
+//! Heard (talkgroups and radios, or channels and nodes), Hex (every data
+//! message, hex with ASCII beside it), LRRP or Positions (location messages
+//! as a table) and IP (the datagrams, PCAP recording, one picked apart).
 //!
 //! The hex dump can run to thousands of lines: it is laid out once when a
 //! message arrives and drawn with `show_rows`, which lays out only the rows
@@ -36,6 +36,9 @@ pub struct DataTabs {
     /// The datagram picked in the IP tab (its number); None follows the
     /// newest.
     ip_pick: Option<u64>,
+    /// Digital voice (DMR, TETRA…) rather than a data decoder: the tabs'
+    /// names and hints.
+    voice: bool,
 }
 
 /// `bytes` as hex-dump rows: offset, 16 bytes in two groups of 8, ASCII
@@ -155,7 +158,8 @@ impl DataTabs {
     }
 
     /// The tab bar, with counts. Returns the tab to draw.
-    pub fn bar(&mut self, ui: &mut Ui, view: &DecoderView) -> Tab {
+    pub fn bar(&mut self, ui: &mut Ui, view: &DecoderView, voice: bool) -> Tab {
+        self.voice = voice;
         ui.horizontal(|ui| {
             let fixes = view.locations.iter().filter(|l| l.lat.is_some()).count();
             for (t, name) in [
@@ -164,7 +168,8 @@ impl DataTabs {
                 (
                     Tab::Lrrp,
                     format!(
-                        "LRRP {}",
+                        "{} {}",
+                        if voice { "LRRP" } else { "Positions" },
                         if view.locations_total > 0 {
                             fixes.to_string()
                         } else {
@@ -189,9 +194,11 @@ impl DataTabs {
         if view.packets.is_empty() {
             ui.label(RichText::new("no data messages yet").color(GREY));
             ui.label(
-                RichText::new(
-                    "DMR packet data (LRRP, text, IP) and TETRA SDS appear here, in hex and ASCII.",
-                )
+                RichText::new(if self.voice {
+                    "DMR packet data (LRRP, text, IP) and TETRA SDS appear here, in hex and ASCII."
+                } else {
+                    "Each message appears here, in hex and ASCII."
+                })
                 .color(GREY)
                 .size(12.0),
             );
@@ -248,7 +255,14 @@ impl DataTabs {
             );
         });
         if view.locations.is_empty() {
-            ui.label(RichText::new("no LRRP yet (Motorola location, UDP port 4001)").color(GREY));
+            ui.label(
+                RichText::new(if self.voice {
+                    "no LRRP yet (Motorola location, UDP port 4001)"
+                } else {
+                    "no positions yet"
+                })
+                .color(GREY),
+            );
             return;
         }
         let opt = |v: Option<f64>, f: &dyn Fn(f64) -> String| v.map_or("–".to_string(), f);

@@ -34,7 +34,7 @@ impl DecoderFactory for Factory {
         DecoderInfo {
             id: "pagers",
             name: "Pagers",
-            family: Family::Other,
+            family: Family::Data,
             standard: "ITU-R M.584-2 (POCSAG), FLEX",
             summary: "POCSAG 512/1200/2400 and FLEX 1600–6400, every message type",
         }

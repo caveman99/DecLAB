@@ -574,12 +574,18 @@ fn heard(ui: &mut Ui, h: &declab_api::Heard) -> Option<f64> {
     let lock = |enc: bool| if enc { " 🔒" } else { "" };
     let dot = |live: bool| if live { "● " } else { "" };
 
-    head(ui, "Talkgroups", format!("{} heard in {}", h.groups.len(), clock(h.now_s - h.since_s)));
+    // A data network's lists are channels and nodes, its calls packets.
+    let groups = if h.data { "Channels" } else { "Talkgroups" };
+    head(ui, groups, format!("{} heard in {}", h.groups.len(), clock(h.now_s - h.since_s)));
     if h.groups.is_empty() {
         ui.label(RichText::new("none yet").color(GREY));
     } else {
         egui::Grid::new("heard_groups").striped(false).spacing(vec2(14.0, 2.0)).show(ui, |ui| {
-            let cols = [("TG", false), ("slot", false), ("calls", true), ("radios", true), ("air time", true), ("last", true)];
+            let cols = if h.data {
+                [("channel", false), ("modem", false), ("packets", true), ("nodes", true), ("air time", true), ("last", true)]
+            } else {
+                [("TG", false), ("slot", false), ("calls", true), ("radios", true), ("air time", true), ("last", true)]
+            };
             let by = sort_header(ui, "groups", &cols, 5);
             let mut rows: Vec<&declab_api::HeardGroup> = h.groups.iter().collect();
             // Rust note: `sort_by` is stable, so equal keys keep the
@@ -623,12 +629,16 @@ fn heard(ui: &mut Ui, h: &declab_api::Heard) -> Option<f64> {
         });
     }
     ui.add_space(8.0);
-    head(ui, "Radios", format!("{} heard", h.radios.len()));
+    head(ui, if h.data { "Nodes" } else { "Radios" }, format!("{} heard", h.radios.len()));
     if h.radios.is_empty() {
         ui.label(RichText::new("none yet").color(GREY));
     } else {
         egui::Grid::new("heard_radios").striped(false).spacing(vec2(14.0, 2.0)).show(ui, |ui| {
-            let cols = [("radio", false), ("last TG", false), ("calls", true), ("talk time", true), ("position", false), ("last", true)];
+            let cols = if h.data {
+                [("node", false), ("channel", false), ("packets", true), ("air time", true), ("position", false), ("last", true)]
+            } else {
+                [("radio", false), ("last TG", false), ("calls", true), ("talk time", true), ("position", false), ("last", true)]
+            };
             let by = sort_header(ui, "radios", &cols, 5);
             let mut rows: Vec<&declab_api::HeardRadio> = h.radios.iter().collect();
             rows.sort_by(|a, b| {

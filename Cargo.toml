@@ -46,6 +46,8 @@ opt-level = 3
 opt-level = 3
 [profile.dev.package.declab-pmr]
 opt-level = 3
+[profile.dev.package.declab-lora]
+opt-level = 3
 # The DAB/DAB+ receiver (crates/decdab-*, from DecDAB).
 [profile.dev.package.decdab-dsp]
 opt-level = 3

@@ -17,6 +17,7 @@ mod dvbt;
 mod gate_panel;
 mod heard;
 mod level;
+mod meshtastic;
 mod nxdn;
 mod p25;
 mod pagers;
@@ -40,6 +41,8 @@ pub static ALL: &[&dyn DecoderFactory] = &[
     &analog::Factory(Mode::Cw),
     &voice::Factory,
     &pagers::Factory,
+    &meshtastic::Factory(meshtastic::Band::SubGhz),
+    &meshtastic::Factory(meshtastic::Band::Wide),
     &level::Factory,
 ];
 

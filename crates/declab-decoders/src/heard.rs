@@ -79,6 +79,8 @@ pub(crate) fn clock(s: f64) -> String {
 
 #[derive(Default)]
 pub(crate) struct HeardList {
+    /// A data network's list (see [`Heard::data`]).
+    data: bool,
     groups: Vec<Group>,
     radios: Vec<Radio>,
     cells: Vec<NearbyCell>,
@@ -88,6 +90,14 @@ pub(crate) struct HeardList {
 }
 
 impl HeardList {
+    /// The channels and nodes of a data network (see [`Heard::data`]).
+    pub fn for_data() -> Self {
+        HeardList {
+            data: true,
+            ..HeardList::default()
+        }
+    }
+
     /// A call (a transmission) starts on `group` from `radio`, if known.
     pub fn start(&mut self, now: f64, group: &str, slot: &str, radio: Option<&str>, encrypted: bool) {
         self.end(group);
@@ -267,11 +277,15 @@ impl HeardList {
                 })
                 .collect(),
             cells: self.cells.clone(),
+            data: self.data,
         });
     }
 
     pub fn clear(&mut self) {
-        *self = HeardList::default();
+        *self = HeardList {
+            data: self.data,
+            ..HeardList::default()
+        };
     }
 }
 

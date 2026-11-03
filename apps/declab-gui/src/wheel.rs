@@ -31,6 +31,7 @@ pub fn family_colour(f: Family) -> Color32 {
         Family::Radio => Color32::from_rgb(110, 230, 130),
         Family::Analog => Color32::from_rgb(210, 155, 255),
         Family::Voice => Color32::from_rgb(255, 120, 110),
+        Family::Data => Color32::from_rgb(80, 220, 210),
         Family::Other => Color32::from_rgb(176, 182, 188),
     }
 }
@@ -377,6 +378,16 @@ pub fn icon(painter: &egui::Painter, id: &str, p: Pos2, s: f32, ink: Color32) {
             for k in 0..3 {
                 let y = r.top() + s * (0.3 + 0.22 * k as f32);
                 painter.line_segment([pos2(r.left() + s * 0.2, y), pos2(r.right() - s * 0.2, y)], Stroke::new(1.0, ink));
+            }
+        }
+        "meshtastic" | "meshtastic-2g4" => {
+            // Three nodes of a mesh, each linked to the others.
+            let nodes = [p + vec2(-s * 0.8, s * 0.55), p + vec2(s * 0.8, s * 0.55), p + vec2(0.0, -s * 0.75)];
+            for (a, b) in [(0, 1), (1, 2), (2, 0)] {
+                painter.line_segment([nodes[a], nodes[b]], Stroke::new(1.0, ink));
+            }
+            for n in nodes {
+                painter.circle_filled(n, 3.0, ink);
             }
         }
         "level" => {

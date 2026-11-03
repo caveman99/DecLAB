@@ -77,8 +77,10 @@ fn design(rate: f64, pass: f64, stop: f64) -> Vec<f32> {
     )
 }
 
-/// One decimating FIR stage.
-struct Stage {
+/// One decimating FIR stage: a low-pass (from [`lowpass`]) keeping every
+/// `decim`th output. Public for a decoder that needs an exact decimation
+/// ([`Ddc`] picks its own).
+pub struct Stage {
     /// Taps reversed, so the dot product runs over the buffer forwards.
     taps_rev: Vec<f32>,
     decim: usize,
@@ -89,7 +91,7 @@ struct Stage {
 }
 
 impl Stage {
-    fn new(mut taps: Vec<f32>, decim: usize) -> Self {
+    pub fn new(mut taps: Vec<f32>, decim: usize) -> Self {
         taps.reverse();
         let l = taps.len();
         Stage {
@@ -100,7 +102,7 @@ impl Stage {
         }
     }
 
-    fn process(&mut self, input: &[Iq], out: &mut Vec<Iq>) {
+    pub fn process(&mut self, input: &[Iq], out: &mut Vec<Iq>) {
         let l = self.taps_rev.len();
         self.buf.extend_from_slice(input);
         out.reserve(self.buf.len().saturating_sub(self.next_out) / self.decim + 1);
@@ -121,7 +123,7 @@ impl Stage {
         self.next_out -= drop;
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         let l = self.taps_rev.len();
         self.buf.clear();
         self.buf.resize(l - 1, Iq::new(0.0, 0.0));

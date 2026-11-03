@@ -1933,8 +1933,9 @@ impl eframe::App for App {
                                 // services on their own.
                                 // Digital voice: talkgroups and radios, or its
                                 // data as hex, LRRP locations or IP.
-                                if info.family == declab_api::Family::Voice {
-                                    match self.data_tabs.bar(ui, &self.view) {
+                                let voice = info.family == declab_api::Family::Voice;
+                                if voice || info.family == declab_api::Family::Data {
+                                    match self.data_tabs.bar(ui, &self.view, voice) {
                                         data_tabs::Tab::Heard => {
                                             if let Some(p) =
                                                 panels::services(ui, &self.view, self.selected_service)

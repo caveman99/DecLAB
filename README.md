@@ -7,7 +7,7 @@
 
 **One software-defined radio receiver for everything on the air.** Point an
 RTL-SDR, Airspy or HackRF at the sky and DecLAB decodes terrestrial TV,
-digital radio, FM, pagers and two-way digital voice, all in one window, all
+digital radio, FM, pagers, Meshtastic and two-way digital voice, all in one window, all
 in Rust, all from one portable `.exe`.
 
 | | Modes |
@@ -17,6 +17,7 @@ in Rust, all from one portable `.exe`.
 | 📻 **Digital radio** | DAB and DAB+, with station text (DLS) and slideshows |
 | 〰️ **Analog** | FM with RDS, NFM, AM, USB, LSB, DSB and CW; squelch by level, SNR or noise |
 | 📟 **Pagers** | POCSAG and FLEX |
+| 🕸️ **Meshtastic** | LoRa at any spreading factor (found by itself), below 1 GHz and at 2.4 GHz; default-key channels decrypted: text, positions, node info, telemetry |
 | 🎙️ **Digital voice** | DMR (Tier I, II and III, LRRP positions), NXDN48, NXDN96, P25 phase 1 and TETRA, detected by itself; data as a hex dump, LRRP table and IP view |
 
 **Several decoders at once.** Run up to eight VFOs on one radio, each with its

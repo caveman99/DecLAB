@@ -107,6 +107,7 @@ Shared crates are merged once; standard-specific DSP is copied in with a
 | `decdvbt-core`, `-fec`, `-ofdm`, `-rx`, `-ts`, `-mod` | copied from DecDVB-T (`5e9b249`) under their own names (see §11); `decdvbt-dsp` is `declab-dsp` (identical) |
 | `declab-dvbs` | `decsat-dsp`/`-frame`/`-fec`/`-modem` DVB parts, `decsat-gse`, `decsat-ip` |
 | `declab-dab` | `decdab-ofdm`, `-fic`, `-msc`, `-fec`, `-codecs`, `-data`, `decdab-fdk-sys` |
+| `declab-lora` | new: LoRa receiver and coding (after gr-lora_sdr), modulator, Meshtastic packets (§28) |
 | `apps/declab-gui`, `apps/declab-cli` | new, built from the three GUIs' parts |
 
 **Licence clash, settled in M3:** DecDAB uses FDK-AAC for DAB+, DecSAT
@@ -1051,3 +1052,74 @@ own. "Control channel" means a control frame in the last 2 s, not one ever.
 When the signal drops, Digital voice keeps the last mode's card, titled
 "last heard m:ss ago", instead of a bare "searching". A retune clears both.
 A headline too long for the card shrinks to fit beside its margin.
+
+## 28. Meshtastic over LoRa (2026-11-03)
+
+Two decoders in a new family, **Data** (pagers moved there too; it shows
+the data tabs, its location tab named *Positions*): `meshtastic` below
+1 GHz and `meshtastic-2g4` for the SX128x at 2.4 GHz (LORA_24). The host's
+channel is fixed per decoder, so each takes the widest LoRa bandwidth of
+its band: 1 MS/s with a 500 kHz channel, and 3.25 MS/s with 1625 kHz. The
+LoRa bandwidth is a setting (`bandwidth`, panel or `--set bandwidth=250k`;
+LongFast's 250 kHz, 812.5 kHz at 2.4 GHz, by default); every LoRa
+bandwidth divides those rates into twice itself. The plug-in low-passes
+(flat to 0.58 BW, stopped by 0.75 BW) and decimates to 2 × BW.
+
+**LoRa** (`crates/declab-lora`). LoRa has no public specification; the
+coding chain (whitening, header and its checksum, payload CRC, Hamming
+4/5–4/8, diagonal interleaver, Gray map, reduced rate for the header and
+LDRO) is the one gr-lora_sdr implements (Tapparel et al., EPFL, GPL-3.0),
+each function naming the block it follows. The receiver is our own:
+
+- The spreading factor is found by brute force: for each SF 7–12, windows
+  of 2^SF chips (every other sample) dechirped and FFT'd; four windows in a
+  row peaking in one bin start a frame. The coding rate is in each frame's
+  header; LDRO follows the 16 ms rule, the other setting tried on a CRC
+  failure (an SX128x has none).
+- Carrier offset: the fraction from the preamble peak's turn window to
+  window, the integer part with the timing from the preamble's and a
+  downchirp's bins (u + d)/2; the downchirps' start where two whole ones
+  line up best.
+- Timing to the fraction of a chip (the preamble's peak between bins on
+  windows moved onto the symbol grid), and each symbol sampled at its exact
+  chip times by an 8-tap windowed sinc from the 2× stream: one sample a
+  chip taken a fraction r of a chip off turns the phase at the chirp's wrap
+  by 2πr (−3 dB at a quarter chip). Reduced-rate symbols are divided by 4
+  with rounding (gr-lora_sdr truncates), so a bin off by one is no error.
+- Clock offset: with the carrier frequency known (the block's tuning), the
+  symbols drift by N·c_Hz/f_c chips each, followed from where the timing was
+  measured. A 255-byte SF12 frame with 12 ppm between the ends slides 20
+  chips unfollowed.
+
+**Meshtastic** (`declab-lora/src/meshtastic.rs`), after the firmware: the
+16-byte header (`PacketHeader`), AES-CTR (nonce: packet id 64-bit LE, sender
+32-bit LE, a big-endian block counter; `CryptoEngine`), the channel hash
+(XOR of name and key; LongFast with the default key is 8), the presets
+(`modemPresetToParams`). Each packet is tried unencrypted and with the
+default key and its short-PSK siblings (`AQ==` and up, 1–10); a `Data` that
+parses (portnum first, a known port) is the proof. The protobufs are the
+official ones (the `meshtastic` crate, GPL-3.0, without its default
+features: only the generated types). PKI direct messages and channels on
+their own keys stay encrypted. Text, position, node info, telemetry,
+traceroute, neighbour info and routing are summarised; positions go to
+`Sink::locations`, channels and nodes to the heard list (`Heard::data`
+names the columns: channel, modem, packets, nodes, air time), every frame
+to the log and the hex tab (header and decrypted `Data`).
+
+Measured in simulation (`mesh_sweep`, 250 kHz, 24-byte text, 20 frames a
+point, the SNR in the LoRa band, through the plug-in): at Semtech's
+demodulation floor (SX1276 table 13) SF8–SF12 decode 12–18 of 20 and all 20
+from 1.5 dB above; SF7 is about 1.5 dB short of its floor. CPU: 3.4–4.0 % of
+a core at 1 MS/s (9800X3D), the channel filter and the six SF detectors
+most of it. Simulated captures: `mesh_make`.
+
+On the air (RTL-SDR Blog V4, EU_868 LongFast at 869.525 MHz, 5 minutes):
+eight packets from three nodes, SNR 5–20 dB, carrier offsets −10.4 to
++2.7 kHz, no CRC or header errors. A node's NODEINFO on LongFast was
+decrypted with the default key and its channel named from the hash; the
+other two nodes' packets, on a channel with its own key (hash 0x8f), stayed
+encrypted. A newer firmware's (3.0) burst on the same frequency, 100 ms
+long, is not LoRa as this decodes it. The decoder worker (the host's
+resampling from 2.048 MS/s included) took 8 % of a core. The official
+crate's protobufs (0.1.9) lack the newest hardware models: those show as a
+number.

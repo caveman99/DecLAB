@@ -26,6 +26,8 @@ decdvbt-ts = { path = "../decdvbt-ts" }
 declab-pagers = { path = "../declab-pagers" }
 # DMR (and later NXDN, P25, TETRA): crates/declab-pmr.
 declab-pmr = { path = "../declab-pmr" }
+# LoRa and Meshtastic: crates/declab-lora.
+declab-lora = { path = "../declab-lora" }
 # DAB/DAB+: DecDAB's receiver (crates/decdab-*), AAC by libxaac.
 decdab-ofdm = { path = "../decdab-ofdm" }
 decdab-fic = { path = "../decdab-fic" }

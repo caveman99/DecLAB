@@ -47,13 +47,22 @@ pub enum Family {
     /// Two-way radio's digital voice and trunking: DMR (later NXDN, P25,
     /// TETRA).
     Voice,
+    /// Messages and data networks: pagers, Meshtastic.
+    Data,
     /// Anything else: tools, examples, third-party decoders.
     Other,
 }
 
 impl Family {
-    pub const ALL: [Family; 6] =
-        [Family::Terrestrial, Family::Satellite, Family::Radio, Family::Analog, Family::Voice, Family::Other];
+    pub const ALL: [Family; 7] = [
+        Family::Terrestrial,
+        Family::Satellite,
+        Family::Radio,
+        Family::Analog,
+        Family::Voice,
+        Family::Data,
+        Family::Other,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -62,6 +71,7 @@ impl Family {
             Family::Radio => "Digital radio",
             Family::Analog => "Analog",
             Family::Voice => "Digital voice",
+            Family::Data => "Data",
             Family::Other => "Other",
         }
     }
@@ -171,6 +181,9 @@ pub struct Heard {
     /// Neighbouring cells or sites the network announces (TETRA's
     /// D-NWRK-BROADCAST), by number.
     pub cells: Vec<NearbyCell>,
+    /// Heard on a data network (Meshtastic): the groups are channels, the
+    /// radios nodes, the calls packets and the air time theirs.
+    pub data: bool,
 }
 
 /// A neighbouring cell: where it is, to tune to.

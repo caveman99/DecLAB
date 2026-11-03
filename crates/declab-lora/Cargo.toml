@@ -1,0 +1,16 @@
+[package]
+name = "declab-lora"
+description = "LoRa receiver (any spreading factor, coding rate from the header), modulator, and Meshtastic packets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+num-complex.workspace = true
+rustfft.workspace = true
+aes = "0.8"
+# The official Meshtastic protobufs; without its default features it is
+# only the generated types (no serial, TCP or async runtime).
+meshtastic = { version = "0.1.9", default-features = false }
